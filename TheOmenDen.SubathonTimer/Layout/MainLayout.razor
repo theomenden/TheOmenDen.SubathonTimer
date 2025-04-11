@@ -1,0 +1,85 @@
+﻿@using Microsoft.FluentUI.AspNetCore.Components.Extensions
+@inherits LayoutComponentBase
+<FluentDesignTheme @bind-Mode="@Mode"
+@bind-OfficeColor="@OfficeColor"
+OnLoaded="@OnLoaded"
+OnLuminanceChanged="@OnLuminanceChanged"
+StorageName="theme" />
+<FluentLayout>
+    <FluentHeader>
+        <FluentLabel Typo="Typography.PageTitle" Color="Color.Neutral">Configurable Subathon Timer</FluentLabel>
+        <FluentSpacer />
+        <FluentGrid>
+            <FluentGridItem>
+                <FluentSelect Label="Theme"
+                              Width="250px"
+                              Items="@(Enum.GetValues<DesignThemeModes>())"
+                              @bind-SelectedOption="@Mode" />
+            </FluentGridItem>
+
+            <FluentGridItem>
+                <FluentSelect Label="Color"
+                              Items="@(Enum.GetValues<OfficeColor>().Select(i => (OfficeColor?)i))"
+                              Height="200px"
+                              Width="250px"
+                              @bind-SelectedOption="@OfficeColor">
+                    <OptionTemplate>  
+                        <FluentStack>
+                            <FluentIcon Value="@(new Icons.Filled.Size20.RectangleLandscape())"
+                                        Color="Color.Custom"
+                                        CustomColor="@(@context.ToAttributeValue() != "default" ? context.ToAttributeValue() : "#036ac4" )" />
+                            <FluentLabel>@context</FluentLabel>  
+                        </FluentStack>
+                    </OptionTemplate> 
+                </FluentSelect>
+                <FluentButton Appearance="Appearance.Accent" OnClick="PickRandomColor">Feeling lucky?</FluentButton>
+            </FluentGridItem>
+        </FluentGrid>
+    </FluentHeader>
+    <FluentStack Class="main" Orientation="Orientation.Horizontal" Width="100%">
+        <NavMenu />
+        <FluentBodyContent Class="body-content">
+            <ErrorBoundary>
+                <ChildContent>
+                    <div class="content">
+                        @Body
+                    </div>
+                </ChildContent>
+                <ErrorContent Context="ex">
+                    <div class="blazor-error-boundary">@ex.Message</div>
+                </ErrorContent>
+            </ErrorBoundary>
+        </FluentBodyContent>
+    </FluentStack>
+    <FluentFooter>
+        <a href="https://www.fluentui-blazor.net" target="_blank">Documentation and demos</a>
+        <FluentSpacer />
+        <a href="https://learn.microsoft.com/en-us/aspnet/core/blazor" target="_blank">About Blazor</a>
+    </FluentFooter>
+</FluentLayout>
+@code
+{
+    [Inject] ILogger<MainLayout> Logger { get; init; } = default!;
+    public DesignThemeModes Mode { get; set; } = DesignThemeModes.System;
+
+    public OfficeColor? OfficeColor { get; set; } = Microsoft.FluentUI.AspNetCore.Components.OfficeColor.Teams;
+
+    void OnLoaded(LoadedEventArgs e)
+    {
+        var mode = e.Mode == DesignThemeModes.System ? "System" : String.Empty;
+        var luminance = e.IsDark ? "Dark" : "Light";
+        Logger.LogInformation("Loaded: {Mode} {Luminance}", mode, luminance);
+    }
+
+    void OnLuminanceChanged(LuminanceChangedEventArgs e)
+    {
+        var mode = e.Mode == DesignThemeModes.System ? "System" : String.Empty;
+        var luminance = e.IsDark ? "Dark" : "Light";
+        Logger.LogInformation("Changed: {Mode} {Luminance}", mode, luminance);
+    }
+
+    void PickRandomColor()
+    {
+        OfficeColor = OfficeColorUtilities.GetRandom();
+    }
+}

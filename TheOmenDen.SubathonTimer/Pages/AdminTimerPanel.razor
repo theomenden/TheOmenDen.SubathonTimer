@@ -1,0 +1,77 @@
+﻿@inject ILogger<AdminTimerPanel> Logger
+
+<FluentCard Class="admin-controls">
+    <FluentLabel Typo="Typography.H3">🛠️ Timer Controls</FluentLabel>
+
+    <FluentLabel Typo="Typography.PaneHeader"><strong>Current Time:</strong> @_remaining.ToString(Format)</FluentLabel>
+
+    <FluentButton OnClick="PauseOrResume" Appearance="Appearance.Accent" IconEnd="@(new Icons.Filled.Size16.Play())">
+        @(_isPaused ? "Resume" : "Pause")
+    </FluentButton>
+
+    <FluentButton Appearance="Appearance.Accent" @onclick="ResetTimer" IconEnd="@(new Icons.Color.Size16.ArrowSync())">
+        Reset
+    </FluentButton>
+
+    <FluentButton OnClick="() => ExtendTime(30)">+30 sec</FluentButton>
+    <FluentButton OnClick="() => ExtendTime(60)">+1 min</FluentButton>
+
+    <FluentTextField Label="Custom Time (seconds)" @bind-Value="_customExtendStr" />
+    <FluentButton OnClick="ApplyCustomExtend">Apply</FluentButton>
+</FluentCard>
+
+@code {
+    [Parameter]
+    public EventCallback<int> OnExtend { get; set; }
+
+    [Parameter]
+    public EventCallback OnPause { get; set; }
+
+    [Parameter]
+    public EventCallback OnResume { get; set; }
+
+    [Parameter]
+    public EventCallback OnReset { get; set; }
+
+    [Parameter]
+    public TimeSpan Remaining { get; set; }
+
+    [Parameter]
+    public string Format { get; set; } = "hh:mm:ss";
+
+    private TimeSpan _remaining => Remaining;
+    private bool _isPaused;
+    private string _customExtendStr = "15";
+
+    private async Task PauseOrResume()
+    {
+        _isPaused = !_isPaused;
+        if (_isPaused)
+        {
+            Logger.LogInformation("Timer paused.");
+            await OnPause.InvokeAsync();
+        }
+        else
+        {
+            Logger.LogInformation("Timer resumed.");
+            await OnResume.InvokeAsync();
+        }
+    }
+
+
+    private async Task ResetTimer() => await OnReset.InvokeAsync();
+
+    private async Task ExtendTime(int seconds)
+    {
+        Logger.LogInformation("Timer extended by {Seconds}s from admin.", seconds);
+        await OnExtend.InvokeAsync(seconds);
+    }
+
+    private async Task ApplyCustomExtend()
+    {
+        if (int.TryParse(_customExtendStr, out var seconds) && seconds > 0)
+        {
+            await ExtendTime(seconds);
+        }
+    }
+}

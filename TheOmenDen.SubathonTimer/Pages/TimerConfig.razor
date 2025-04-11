@@ -1,0 +1,92 @@
+﻿@page "/config"
+@using TheOmenDen.SubathonTimer.Models
+@using TheOmenDen.SubathonTimer.Models.Enums
+@using TheOmenDen.SubathonTimer.Services
+@inject TimerConfigService ConfigService
+
+<FluentCard Class="config-card">
+    <FluentTextField Label="Display Format"
+    Value="@Config.DisplayFormat"
+    ValueChanged="v => Config = Config with { DisplayFormat = v }" />
+
+    <FluentSelect 
+        TOption="FluentTheme"
+        OptionText="ft => Enum.GetName(ft)"
+        OptionValue="ft => ft.ToString()"
+        Value="@_selectedTheme"
+        ValueChanged="t => OnThemeChanged(t)"
+        Items="@(Enum.GetValues<FluentTheme>())"
+        Label="Theme" />
+
+    <FluentTextField Label="Font Size"
+    Value="@Config.FontSize"
+    ValueChanged="v => Config = Config with { FontSize = v }" />
+
+    <FluentTextField Label="Text Color"
+    Value="@Config.Color"
+    ValueChanged="v => Config = Config with { Color = v }" />
+
+    <FluentLabel Typo="Typography.H4" Color="Color.Neutral">Sub Boosts (in seconds)</FluentLabel>
+    @foreach (var tier in Enum.GetValues<TwitchSubscriptionTier>())
+    {
+        <FluentNumberField Label="@tier.ToString()"
+                           TValue="int"
+        Value="@Config.SubBoosts[tier]"
+        ValueChanged="v => UpdateSubBoost(tier, v)" />
+    }
+
+    <FluentLabel Typo="Typography.H4" Color="Color.Neutral">Bit Threshold Boosts</FluentLabel>
+    @foreach (var threshold in Enum.GetValues<BitThreshold>())
+    {
+        <FluentNumberField Label="@threshold.ToString()"
+                           TValue="int"
+        Value="@GetBitsBoostValue(threshold)"
+        ValueChanged="v => UpdateBitsBoost(threshold, v)" />
+    }
+
+    <FluentButton Appearance="Appearance.Accent" @onclick="Save">Save</FluentButton>
+</FluentCard>
+
+@code {
+    private TimerConfiguration Config = new();
+    private string _selectedTheme = "system";
+    protected override async Task OnInitializedAsync()
+    {
+        await ConfigService.LoadAsync();
+        Config = ConfigService.Config;
+    }
+
+    private void UpdateSubBoost(TwitchSubscriptionTier tier, int value)
+    {
+        var updatedSubs = Config.SubBoosts.ToDictionary(kvp => kvp.Key, kvp => kvp.Key == tier ? value : kvp.Value);
+        Config = Config with { SubBoosts = updatedSubs };
+    }
+
+    private int GetBitsBoostValue(BitThreshold valueToSearch)
+    {
+        return Config.BitsBoostTable.TryGetValue(valueToSearch, out var value) ? value : 0;
+    }
+
+    private void UpdateBitsBoost(BitThreshold threshold, int value)
+    {
+        var updatedBits = Config.BitsBoostTable.ToDictionary(kvp => kvp.Key, kvp => kvp.Key == threshold ? value : kvp.Value);
+        Config = Config with { BitsBoostTable = updatedBits };
+    }
+
+    private void OnThemeChanged(string theme)
+    {
+        if (String.IsNullOrWhiteSpace(theme) || !Enum.TryParse<FluentTheme>(theme, true, out var parsedResult))
+        {
+            parsedResult = FluentTheme.System;
+            _selectedTheme = "system";
+        }
+
+        Config = Config with { Theme = parsedResult };
+        _selectedTheme = theme;
+    }
+
+    private async Task Save()
+    {
+        await ConfigService.UpdateAsync(Config);
+    }
+}
