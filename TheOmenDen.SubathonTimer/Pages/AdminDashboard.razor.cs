@@ -1,26 +1,10 @@
-﻿@page "/"
-@inject ILogger<Home> Logger
+﻿using Microsoft.AspNetCore.Components;
 
-<FluentLabel Typo="Typography.HeroTitle">🎯 Timer Dashboard</FluentLabel>
-<FluentSpacer Width="100" />
-<FluentStack Orientation="Orientation.Horizontal"
-                          HorizontalAlignment="HorizontalAlignment.Center"
-             VerticalAlignment="VerticalAlignment.Center">
+namespace TheOmenDen.SubathonTimer.Pages;
 
-    <CountdownTimer @ref="_timerComponent"
-                    OnTick="UpdateRemaining"
-                    Format="@_format" />
-
-    <AdminTimerPanel
-        Format="@_format"
-        Remaining="_remaining"
-        OnExtend="ExtendTime"
-        OnPause="Pause"
-        OnResume="Resume"
-        OnReset="Reset" />
-</FluentStack>
-
-@code {
+public partial class AdminDashboard : ComponentBase
+{
+    [Inject] private ILogger<AdminDashboard> Logger { get; set; } = default!;
     private CountdownTimer? _timerComponent;
     private TimeSpan _remaining;
     private string _format = @"hh\:mm\:ss";

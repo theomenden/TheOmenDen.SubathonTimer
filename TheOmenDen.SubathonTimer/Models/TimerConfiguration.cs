@@ -22,10 +22,10 @@ public record TimerConfiguration
 
     public Dictionary<BitThreshold, int> BitsBoostTable { get; init; } = new()
     {
-        [BitThreshold.One] = 1,
-        [BitThreshold.Five] = 2,
-        [BitThreshold.Ten] = 5,
-        [BitThreshold.OneHundred] = 10,
-        [BitThreshold.OneThousand] = 60
+        [BitThreshold.OneBit] = 1,
+        [BitThreshold.FiveBits] = 5,
+        [BitThreshold.TenBits] = 10,
+        [BitThreshold.OneHundredBits] = 100,
+        [BitThreshold.OneThousandBits] = 1000
     };
 }
