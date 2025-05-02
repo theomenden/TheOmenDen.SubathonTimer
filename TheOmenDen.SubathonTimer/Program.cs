@@ -67,7 +67,8 @@ try
     builder.Services.AddHttpClient(TwitchConstants.TwitchBackend, client =>
     {
         client.BaseAddress = new Uri(builder.Configuration["Twitch:BackendUri"]);
-    });
+    })
+    .AddStandardResilienceHandler();
 
     builder.Services.AddMsalAuthentication(options =>
     {
