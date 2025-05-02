@@ -1,15 +1,93 @@
 ﻿@page "/connected"
-@inject TwitchUserState TwitchState
+@using TheOmenDen.SubathonTimer.Services
 
-@if (TwitchState.User is not null)
-{
-    <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" HorizontalGap="12">
-        <FluentPersona  Image="@TwitchState.User.ProfileImageUrl" Name="@TwitchState.User.DisplayName" />
-        <FluentLabel Typo="Typography.Header">Welcome @TwitchState.User.DisplayName</FluentLabel>
-        <FluentLabel Typo="Typography.Body">Twitch login successful.</FluentLabel>
+@inject ITimerService Timer
+@inject TwitchUserState TwitchState
+@inject NavigationManager Navigation
+
+<PageTitle>Connected</PageTitle>
+
+<FluentStack Orientation="Orientation.Vertical" HorizontalGap="10" Width="100%">
+
+    <FluentLabel Typo="Typography.PageTitle">Subathon Timer Dashboard</FluentLabel>
+
+    <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">
+        Current Time: @Timer.RemainingTime.ToString(@"hh\:mm\:ss")
+    </FluentLabel>
+
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="5">
+        <FluentButton OnClick="@(() => Timer.AddManual(TimeSpan.FromMinutes(15)))">
+            +15 minutes
+        </FluentButton>
+        <FluentButton OnClick="@(() => Timer.SubtractManual(TimeSpan.FromMinutes(5)))">
+            -5 minutes
+        </FluentButton>
     </FluentStack>
-}
-else
-{
-    <FluentLabel Typo="Typography.Body">No user found.</FluentLabel>
+
+    <FluentDivider />
+
+    <FluentLabel Typo="Typography.PageTitle">Define Twitch Event Rules</FluentLabel>
+
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="5">
+        <FluentTextField @bind-Value="NewRule.EventType" Placeholder="Event Type (e.g. channel.cheer)" />
+        <FluentTextField @bind-Value="NewRule.ConditionKey" Placeholder="Condition Key (optional, e.g. bits)" />
+        <FluentTextField @bind-Value="NewRule.ConditionValue" Placeholder="Condition Value (optional, e.g. 500)" />
+        <FluentTextField @bind-Value="NewTime" Placeholder="Time to Add (hh:mm:ss)" />
+        <FluentButton OnClick="AddRule">Add</FluentButton>
+    </FluentStack>
+
+    <FluentList>
+        @foreach (var rule in Timer.GetRules())
+        {
+            <FluentListItem>
+                <FluentTextBlock>@rule.EventType @if (rule.ConditionKey is not null) { <span>(@rule.ConditionKey = @rule.ConditionValue)</span> } → +@rule.TimeToAdd</FluentTextBlock>
+                <FluentButton OnClick="@(() => RemoveRule(rule))">Remove</FluentButton>
+            </FluentListItem>
+        }
+    </FluentList>
+
+    <FluentDivider />
+
+    <FluentLabel Typo="Typography.Subject">Your OBS Overlay URL</FluentLabel>
+    <FluentTextField Value="@OverlayUrl" ReadOnly />
+    <FluentButton OnClick="CopyOverlayUrl">Copy to Clipboard</FluentButton>
+
+</FluentStack>
+
+@code {
+    private TwitchTimerRule NewRule = new() { EventType = TwitchConstants.TwitchEventTypes.Cheer};
+    private string NewTime = String.Empty;
+
+    private string OverlayUrl => 
+        $"https://subathon.corvid.online/view/{TwitchState.User?.Id}";
+
+    private void AddRule()
+    {
+        if (TimeSpan.TryParse(NewTime, out var ts))
+        {
+            Timer.AddRule(new TwitchTimerRule
+            {
+                EventType = NewRule.EventType,
+                ConditionKey = NewRule.ConditionKey,
+                ConditionValue = NewRule.ConditionValue,
+                TimeToAdd = ts
+            });
+
+            // Reset input fields
+            NewRule = new TwitchTimerRule {EventType = TwitchConstants.TwitchEventTypes.Cheer};
+            NewTime = String.Empty;
+        }
+    }
+
+    private void RemoveRule(TwitchTimerRule rule)
+    {
+        Timer.RemoveRule(rule);
+    }
+
+    private async Task CopyOverlayUrl()
+    {
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", OverlayUrl);
+    }
+
+    [Inject] private IJSRuntime JS { get; set; } = default!;
 }

@@ -30,7 +30,18 @@ public static class TwitchConstants
             ReadHypeTrain,
             ReadSubscriptions,
             ReadGoals,
-            ReadBits
+            ReadBits,
+            ReadFollows,
+            ReadChat
         ];
     }
+
+    public static class TwitchEventTypes
+    {
+        public const string Cheer = "channel.cheer";
+        public const string Subscribe = "channel.subscribe";
+        public const string Resubscribe = "channel.subscription.message";
+        public const string Gift = "channel.subscription.gift";
+    }
+
 }

@@ -1,1 +1,6 @@
-﻿@page "/overlay"
+﻿@page "/overlay/{BroadcasterId}"
+@inject NavigationManager Navigation
+
+<FluentLabel Typo="Typography.H1">Subathon Timer</FluentLabel>
+
+<FluentLabel Typo="Typography.Subject">Remaining Time: @DisplayTime</FluentLabel>

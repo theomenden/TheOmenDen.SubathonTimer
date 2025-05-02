@@ -9,8 +9,6 @@ using Serilog.Sinks.SystemConsole.Themes;
 using TheOmenDen.SubathonTimer;
 using TheOmenDen.SubathonTimer.Models;
 using TheOmenDen.SubathonTimer.Services;
-using TheOmenDen.SubathonTimer.Services.Connectivity;
-using TheOmenDen.SubathonTimer.Services.EventBus;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
@@ -48,35 +46,28 @@ try
             .CreateLogger(), dispose: true);
     });
     builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
-    builder.Services.AddScoped<TimerConfigService>();
+    builder.Services.AddSingleton<ITimerService, TimerService>();
+
     builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
     builder.Services.AddFluentUIComponents();
     builder.Services.AddBlazoredLocalStorage();
     builder.Services.AddBlazorDexie();
 
-    builder.Services.AddScoped<IUserCryptoService, BrowserCryptoService>();
-    builder.Services.AddScoped<IEventBus, InMemoryEventBus>();
-    builder.Services.AddScoped<IEventStore, DexieEventStore>();
-    builder.Services.AddScoped<IConnectivityService, ConnectivityService>();
-    builder.Services.AddScoped<EventReplayService>(); // important!
-    builder.Services.AddScoped<IOverlaySignatureHelper, OverlaySignatureHelper>();
-    builder.Services.AddScoped<TwitchAuthService>();
 
     builder.Services.AddScoped<TwitchUserState>();
 
     builder.Services.AddHttpClient(TwitchConstants.TwitchBackend, client =>
-    {
-        client.BaseAddress = new Uri(builder.Configuration["Twitch:BackendUri"]);
-    })
+        {
+            client.BaseAddress = new Uri("https://twitchinterop.corvid.online/api/");
+        })
     .AddStandardResilienceHandler();
+    builder.Services.AddScoped<ITwitchAuthService, TwitchAuthService>();
 
     builder.Services.AddMsalAuthentication(options =>
     {
         builder.Configuration.Bind("AzureAd", options.ProviderOptions.Authentication);
         options.ProviderOptions.DefaultAccessTokenScopes.Add("https://graph.microsoft.com/User.Read");
     });
-
-    builder.Services.AddSingleton<SignalRService>();
 
     await builder.Build().RunAsync();
 }
