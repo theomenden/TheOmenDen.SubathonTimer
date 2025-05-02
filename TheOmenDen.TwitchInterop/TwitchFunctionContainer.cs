@@ -37,6 +37,20 @@ namespace TheOmenDen.TwitchInterop
             _httpClientFactory = httpClientFactory;
         }
 
+        [Function("GetTwitchStatus")]
+        public async Task<HttpResponseData> GetTwitchStatus(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req,
+            FunctionContext context,
+            CancellationToken cancellationToken)
+        {
+            var azureUserId = context.GetUserId();
+            var exists = await _mappingService.DoesMappingExistAsync(azureUserId, cancellationToken);
+
+            var response = req.CreateResponse(exists ? HttpStatusCode.OK : HttpStatusCode.NotFound);
+            return response;
+        }
+
+
         [Function(nameof(TwitchOAuthCallback))]
         public async Task<HttpResponseData> TwitchOAuthCallback(
     [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "twitch/oauth/callback")] HttpRequestData req,

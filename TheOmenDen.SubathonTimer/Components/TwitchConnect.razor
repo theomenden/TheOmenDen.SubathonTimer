@@ -1,0 +1,31 @@
+﻿@using System.Text
+@using System.Text.Encodings.Web
+@using System.Web
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@inject NavigationManager Navigation
+@inject IConfiguration Configuration
+@inject IAccessTokenProvider TokenProvider
+
+<FluentButton Appearance="Appearance.Accent" OnClick="BeginTwitchLogin">
+    Login with Twitch
+</FluentButton>
+
+@code {
+    private void BeginTwitchLogin()
+    {
+        var clientId = Configuration["Twitch:ClientId"];
+        var redirectUri = Navigation.BaseUri + "twitch-callback";
+        var state = Guid.NewGuid().ToString();
+
+        var encodedScopes = String.Join(" ",TwitchConstants.Scopes.AllScopes
+            .Select(x => UrlEncoder.Default.Encode(x)));
+
+        var loginUrl = $"https://id.twitch.tv/oauth2/authorize" +
+                       $"?response_type=code" +
+                       $"&client_id={clientId}" +
+                       $"&redirect_uri={redirectUri}" +
+                       $"&scope={encodedScopes}";
+
+        Navigation.NavigateTo(loginUrl, forceLoad: true);
+    }
+}

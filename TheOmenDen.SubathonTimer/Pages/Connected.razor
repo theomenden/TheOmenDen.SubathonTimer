@@ -1,0 +1,15 @@
+﻿@page "/connected"
+@inject TwitchUserState TwitchState
+
+@if (TwitchState.User is not null)
+{
+    <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" HorizontalGap="12">
+        <FluentPersona  Image="@TwitchState.User.ProfileImageUrl" Name="@TwitchState.User.DisplayName" />
+        <FluentLabel Typo="Typography.Header">Welcome @TwitchState.User.DisplayName</FluentLabel>
+        <FluentLabel Typo="Typography.Body">Twitch login successful.</FluentLabel>
+    </FluentStack>
+}
+else
+{
+    <FluentLabel Typo="Typography.Body">No user found.</FluentLabel>
+}

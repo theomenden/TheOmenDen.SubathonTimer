@@ -7,6 +7,7 @@ namespace TheOmenDen.TwitchInterop.Services;
 public interface ITwitchUserMappingService
 {
     Task InitializeAsync(CancellationToken cancellationToken = default);
+    Task<bool> DoesMappingExistAsync(string azureUserId, CancellationToken ct);
     Task StoreMappingAsync(string broadcasterUserId, string azureUserId, CancellationToken cancellationToken = default);
     Task<string?> GetAzureUserIdAsync(string broadcasterUserId, CancellationToken cancellationToken = default);
 }
@@ -42,6 +43,17 @@ public sealed class TwitchUserMappingService : ITwitchUserMappingService
         await _tableClient.UpsertEntityAsync(entity, TableUpdateMode.Replace, cancellationToken);
         _logger.LogInformation("Stored mapping: {BroadcasterId} → {AzureUserId}", broadcasterUserId, azureUserId);
     }
+
+    public async Task<bool> DoesMappingExistAsync(string azureUserId, CancellationToken ct)
+    {
+        await foreach (var entity in _tableClient.QueryAsync<TableEntity>(
+                           filter: $"PartitionKey eq 'TwitchUser' and AzureUserId eq '{azureUserId}'", cancellationToken: ct))
+        {
+            return true;
+        }
+        return false;
+    }
+
 
     public async Task<string?> GetAzureUserIdAsync(string broadcasterUserId, CancellationToken cancellationToken = default)
     {

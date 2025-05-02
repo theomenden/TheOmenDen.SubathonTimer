@@ -1,0 +1,48 @@
+﻿@page "/twitch-callback"
+@using TheOmenDen.SubathonTimer.Services.Connectivity
+@inject TwitchAuthService TwitchAuth
+@inject TwitchUserState TwitchState
+@inject NavigationManager Navigation
+
+<FluentLabel Typo="Typography.Body">Logging in with Twitch...</FluentLabel>
+<FluentProgressRing />
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var uri = new Uri(Navigation.Uri);
+            var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+            var code = query["code"];
+            var state = query["state"];
+
+            if (string.IsNullOrWhiteSpace(code))
+            {
+                Navigation.NavigateTo("/login-error", forceLoad: true);
+                return;
+            }
+
+            var success = await TwitchAuth.ExchangeCodeAsync(code, state);
+            if (!success)
+            {
+                Navigation.NavigateTo("/login-error", forceLoad: true);
+                return;
+            }
+
+            var user = await TwitchAuth.GetUserInfoAsync();
+            if (user is null)
+            {
+                Navigation.NavigateTo("/login-error", forceLoad: true);
+                return;
+            }
+
+            TwitchState.User = user;
+            Navigation.NavigateTo("/connected", forceLoad: true);
+        }
+        catch
+        {
+            Navigation.NavigateTo("/login-error", forceLoad: true);
+        }
+    }
+}

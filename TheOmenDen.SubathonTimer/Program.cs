@@ -7,6 +7,7 @@ using Serilog;
 using Serilog.Formatting.Compact;
 using Serilog.Sinks.SystemConsole.Themes;
 using TheOmenDen.SubathonTimer;
+using TheOmenDen.SubathonTimer.Models;
 using TheOmenDen.SubathonTimer.Services;
 using TheOmenDen.SubathonTimer.Services.Connectivity;
 using TheOmenDen.SubathonTimer.Services.EventBus;
@@ -58,6 +59,14 @@ try
     builder.Services.AddScoped<IConnectivityService, ConnectivityService>();
     builder.Services.AddScoped<EventReplayService>(); // important!
     builder.Services.AddScoped<IOverlaySignatureHelper, OverlaySignatureHelper>();
+    builder.Services.AddScoped<TwitchAuthService>();
+
+    builder.Services.AddScoped<TwitchUserState>();
+
+    builder.Services.AddHttpClient(TwitchConstants.TwitchBackend, client =>
+    {
+        client.BaseAddress = new Uri("https://<your-function>.azurewebsites.net/api/");
+    });
 
     builder.Services.AddMsalAuthentication(options =>
     {
