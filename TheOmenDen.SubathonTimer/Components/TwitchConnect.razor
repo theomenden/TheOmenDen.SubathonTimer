@@ -6,26 +6,25 @@
 @inject IConfiguration Configuration
 @inject IAccessTokenProvider TokenProvider
 
-<FluentButton Appearance="Appearance.Accent" OnClick="BeginTwitchLogin">
+<FluentButton Appearance="Appearance.Accent" Title="Twitch Login" StopPropagation OnClick="@(() => BeginTwitchLogin())">
     Login with Twitch
 </FluentButton>
 
 @code {
-    private void BeginTwitchLogin()
+    private Task BeginTwitchLogin()
     {
         var clientId = Configuration["Twitch:ClientId"];
-        var redirectUri = Navigation.BaseUri + "twitch-callback";
-        var state = Guid.NewGuid().ToString();
-
-        var encodedScopes = String.Join(" ",TwitchConstants.Scopes.AllScopes
-            .Select(x => UrlEncoder.Default.Encode(x)));
+        var redirectUri = Configuration["Twitch:RedirectUri"];
+        var scope = string.Join(" ", TwitchConstants.Scopes.AllScopes);
+        var encodedScope = UrlEncoder.Default.Encode(scope);
+        var encodedRedirect = UrlEncoder.Default.Encode(redirectUri);
 
         var loginUrl = $"https://id.twitch.tv/oauth2/authorize" +
                        $"?response_type=code" +
                        $"&client_id={clientId}" +
-                       $"&redirect_uri={redirectUri}" +
-                       $"&scope={encodedScopes}";
-
-        Navigation.NavigateTo(loginUrl, forceLoad: true);
+                       $"&redirect_uri={encodedRedirect}" +
+                       $"&scope={encodedScope}";
+        Navigation.NavigateTo(loginUrl, true);
+        return Task.CompletedTask;
     }
 }
