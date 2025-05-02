@@ -1,18 +1,14 @@
 
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Functions.Worker.Http;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Mime;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using Azure.Identity;
-using Azure.Security.KeyVault.Secrets;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using TheOmenDen.TwitchInterop.Extensions;
 using TheOmenDen.TwitchInterop.Models;
 using TheOmenDen.TwitchInterop.Services;
@@ -37,7 +33,7 @@ namespace TheOmenDen.TwitchInterop
             _httpClientFactory = httpClientFactory;
         }
 
-        [Function("GetTwitchStatus")]
+        [Function(nameof(GetTwitchStatus))]
         public async Task<HttpResponseData> GetTwitchStatus(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req,
             FunctionContext context,

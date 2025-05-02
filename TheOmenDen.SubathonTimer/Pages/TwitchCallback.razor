@@ -19,7 +19,7 @@
 
             if (string.IsNullOrWhiteSpace(code))
             {
-                Navigation.NavigateTo("/login-error", forceLoad: true);
+                Navigation.NavigateTo("/login-error", true);
                 return;
             }
 

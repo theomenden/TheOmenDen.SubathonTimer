@@ -9,9 +9,16 @@ public sealed class TwitchAuthService(IHttpClientFactory httpClientFactory)
     public async Task<bool> ExchangeCodeAsync(string code, string? state, CancellationToken cancellationToken = default)
     {
         var httpClient = httpClientFactory.CreateClient(TwitchConstants.TwitchBackend);
-        var payload = new { Code = code, State = state };
 
-        var response = await httpClient.PostAsJsonAsync("twitch/complete", payload, cancellationToken);
+        // Build GET request with query parameters (to match deployed Azure Function)
+        var uri = $"twitch/oauth/callback?code={Uri.EscapeDataString(code)}";
+
+        if (!string.IsNullOrWhiteSpace(state))
+        {
+            uri += $"&state={Uri.EscapeDataString(state)}";
+        }
+
+        var response = await httpClient.GetAsync(uri, cancellationToken);
         return response.IsSuccessStatusCode;
     }
 
