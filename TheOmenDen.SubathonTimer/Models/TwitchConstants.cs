@@ -3,9 +3,6 @@
 public static class TwitchConstants
 {
     public const string TwitchBackend = "CorvidApi";
-    public const string TwitchOAuthBaseUri = "https://id.twitch.tv/oauth2/";
-    public const string TwitchOAuthHttpClientName = "TwitchOAuth";
-
     public static class Endpoints
     {
         public const string OAuthToken = "token";
