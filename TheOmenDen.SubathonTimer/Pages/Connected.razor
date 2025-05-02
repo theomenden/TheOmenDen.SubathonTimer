@@ -35,16 +35,36 @@
         <FluentTextField @bind-Value="NewTime" Placeholder="Time to Add (hh:mm:ss)" />
         <FluentButton OnClick="AddRule">Add</FluentButton>
     </FluentStack>
+    
+    <FluentLabel Typo="Typography.PageTitle">Timer Controls</FluentLabel>
 
-    <FluentList>
+    <FluentStack Orientation="Orientation.Horizontal" VerticalGap="5">
+        <FluentTextField @bind-Value="SetTimeValue" Placeholder="hh:mm:ss" />
+        <FluentButton OnClick="SetTime">Set Timer</FluentButton>
+        <FluentButton OnClick="Timer.Reset">Reset</FluentButton>
+        <FluentButton OnClick="Timer.ZeroOut">Zero Out</FluentButton>
+    </FluentStack>
+
+    <FluentStack Orientation="Orientation.Vertical" HorizontalGap="8">
         @foreach (var rule in Timer.GetRules())
         {
-            <FluentListItem>
-                <FluentTextBlock>@rule.EventType @if (rule.ConditionKey is not null) { <span>(@rule.ConditionKey = @rule.ConditionValue)</span> } → +@rule.TimeToAdd</FluentTextBlock>
-                <FluentButton OnClick="@(() => RemoveRule(rule))">Remove</FluentButton>
-            </FluentListItem>
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalGap="8">
+                <FluentLabel Typo="Typography.Body">
+                    @rule.EventType
+                    @if (!string.IsNullOrWhiteSpace(rule.ConditionKey))
+                    {
+                        <span>(@rule.ConditionKey = @rule.ConditionValue)</span>
+                    }
+                    → +@rule.TimeToAdd
+                </FluentLabel>
+
+                <FluentButton Appearance="Appearance.Accent" OnClick="@(() => RemoveRule(rule))">
+                    Remove
+                </FluentButton>
+            </FluentStack>
         }
-    </FluentList>
+    </FluentStack>
+
 
     <FluentDivider />
 
@@ -76,6 +96,17 @@
             // Reset input fields
             NewRule = new TwitchTimerRule {EventType = TwitchConstants.TwitchEventTypes.Cheer};
             NewTime = String.Empty;
+        }
+    }
+
+    private string SetTimeValue = String.Empty;
+
+    private void SetTime()
+    {
+        if (TimeSpan.TryParse(SetTimeValue, out var ts))
+        {
+            Timer.SetTime(ts);
+            SetTimeValue = "";
         }
     }
 

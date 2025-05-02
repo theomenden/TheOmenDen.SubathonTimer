@@ -6,6 +6,11 @@ namespace TheOmenDen.SubathonTimer.Services;
 public interface ITimerService
 {
     TimeSpan RemainingTime { get; }
+    TimeSpan? DefaultTime { get; }
+
+    void SetTime(TimeSpan time);
+    void Reset();
+    void ZeroOut();
 
     void AddManual(TimeSpan time);
     void SubtractManual(TimeSpan time);
@@ -19,3 +24,4 @@ public interface ITimerService
     void RemoveRule(TwitchTimerRule rule);
     void ClearRules();
 }
+
