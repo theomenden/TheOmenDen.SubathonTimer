@@ -5,6 +5,8 @@ VisualStudioVersion = 17.13.35931.197
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TheOmenDen.SubathonTimer", "TheOmenDen.SubathonTimer\TheOmenDen.SubathonTimer.csproj", "{478FCEF4-451A-4805-9C80-8477DAD29647}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TheOmenDen.TwitchInterop", "TheOmenDen.TwitchInterop\TheOmenDen.TwitchInterop.csproj", "{D295115A-B9AA-49B9-AF19-81F5F7E2FC63}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{478FCEF4-451A-4805-9C80-8477DAD29647}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{478FCEF4-451A-4805-9C80-8477DAD29647}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{478FCEF4-451A-4805-9C80-8477DAD29647}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D295115A-B9AA-49B9-AF19-81F5F7E2FC63}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D295115A-B9AA-49B9-AF19-81F5F7E2FC63}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D295115A-B9AA-49B9-AF19-81F5F7E2FC63}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D295115A-B9AA-49B9-AF19-81F5F7E2FC63}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

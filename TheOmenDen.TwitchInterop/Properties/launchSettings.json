@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "TheOmenDen.TwitchInterop": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7235",
+      "launchBrowser": false
+    }
+  }
+}
