@@ -52,10 +52,12 @@ try
     builder.Services.AddBlazoredLocalStorage();
     builder.Services.AddBlazorDexie();
 
+    builder.Services.AddScoped<IUserCryptoService, BrowserCryptoService>();
     builder.Services.AddScoped<IEventBus, InMemoryEventBus>();
     builder.Services.AddScoped<IEventStore, DexieEventStore>();
     builder.Services.AddScoped<IConnectivityService, ConnectivityService>();
     builder.Services.AddScoped<EventReplayService>(); // important!
+    builder.Services.AddScoped<IOverlaySignatureHelper, OverlaySignatureHelper>();
 
     await builder.Build().RunAsync();
 }

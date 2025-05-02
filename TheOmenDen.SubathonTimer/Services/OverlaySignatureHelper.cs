@@ -3,23 +3,30 @@ using System.Text;
 
 namespace TheOmenDen.SubathonTimer.Services;
 
-public static class OverlaySignatureHelper
+public interface IOverlaySignatureHelper
 {
-    private const string SecretKey = "YOUR_SUPER_SECRET_KEY"; // replace w/ key vault lookup in prod
+    Task<string> GenerateSignedUrlAsync(string channel, string timestamp, CancellationToken cancellationToken = default);
+    Task<bool> VerifySignatureAsync(string channel, string ts, string providedSig, CancellationToken cancellationToken = default);
+}
 
-    public static string Generate(string channel)
+internal sealed class OverlaySignatureHelper(IUserCryptoService cryptoService) : IOverlaySignatureHelper
+{
+    private readonly IUserCryptoService _cryptoService = cryptoService;
+
+    public async Task<string> GenerateSignedUrlAsync(string channel, string timestamp, CancellationToken cancellationToken = default)
     {
-        var key = Encoding.UTF8.GetBytes(SecretKey);
-        var msg = Encoding.UTF8.GetBytes(channel.ToLowerInvariant());
+        var key = await _cryptoService.GenerateOrLoadKeyAsync(cancellationToken);
+        var raw = Encoding.UTF8.GetBytes($"{channel}{timestamp}");
 
         using var hmac = new HMACSHA256(key);
-        var hash = hmac.ComputeHash(msg);
+        var hash = hmac.ComputeHash(raw);
+
         return Convert.ToHexString(hash).ToLowerInvariant();
     }
 
-    public static bool IsValid(string channel, string sig)
+    public async Task<bool> VerifySignatureAsync(string channel, string ts, string providedSig, CancellationToken cancellationToken = default)
     {
-        var expected = Generate(channel);
-        return string.Equals(expected, sig, StringComparison.OrdinalIgnoreCase);
+        var expected = await GenerateSignedUrlAsync(channel, ts, cancellationToken);
+        return String.Equals(expected, providedSig, StringComparison.OrdinalIgnoreCase);
     }
 }

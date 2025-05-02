@@ -5,7 +5,7 @@ namespace TheOmenDen.SubathonTimer.Models;
 public record TimerConfiguration
 {
     private const string DefaultDisplayFormat = @"hh\:mm\:ss";
-    public int InitialTimeSeconds { get; init; } = 300;
+    public int InitialTimeSeconds { get; init; } = 3600;
     public string DisplayFormat { get; init; } = DefaultDisplayFormat;
     public FluentTheme Theme { get; init; } = FluentTheme.Light;
     public string? CustomColorHex { get; init; }
