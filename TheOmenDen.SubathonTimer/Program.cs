@@ -58,7 +58,7 @@ try
 
     builder.Services.AddHttpClient(TwitchConstants.TwitchBackend, client =>
         {
-            client.BaseAddress = new Uri("https://twitchinterop.corvid.online/api/");
+            client.BaseAddress = new Uri("https://twitchinterop-g9h9b6fyh8f3f0ga.eastus2-01.azurewebsites.net/");
         })
     .AddStandardResilienceHandler();
     builder.Services.AddScoped<ITwitchAuthService, TwitchAuthService>();
