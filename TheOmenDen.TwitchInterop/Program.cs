@@ -29,7 +29,7 @@ try
         .ConfigureAppConfiguration((context, config) =>
         {
             var builtConfig = config.Build();
-            var keyVaultUri = new Uri(builtConfig["AzureKeyVault__VaultUri"]);
+            var keyVaultUri = new Uri("https://clientsecurevault.vault.azure.net/");
 
             config.AddAzureKeyVault(keyVaultUri, new DefaultAzureCredential(), new AzureKeyVaultConfigurationOptions());
         })
@@ -70,7 +70,9 @@ try
                 options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(30);
                 options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(60);
                 options.Retry.MaxRetryAttempts = 2;
-                options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(35);
+
+                // Must be >= 2x AttemptTimeout
+                options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(70);
                 options.CircuitBreaker.FailureRatio = 0.5;
                 options.CircuitBreaker.MinimumThroughput = 3;
                 options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
