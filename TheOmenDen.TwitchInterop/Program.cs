@@ -12,89 +12,81 @@ using System.Net.Mime;
 using TheOmenDen.TwitchInterop.Models;
 using TheOmenDen.TwitchInterop.Services;
 
+// Setup Serilog for structured logging
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
     .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
     .Enrich.FromLogContext()
     .Enrich.WithProcessName()
     .Enrich.WithEnvironmentName()
-    .WriteTo.Async(a =>
-    {
-        a.Console(theme: AnsiConsoleTheme.Code);
-        a.Debug(new CompactJsonFormatter());
-    })
+    .WriteTo.Console(theme: AnsiConsoleTheme.Code)
+    .WriteTo.Debug(new CompactJsonFormatter())
     .CreateLogger();
 
 try
 {
     var host = new HostBuilder()
-        .ConfigureFunctionsWebApplication()
-        .ConfigureAppConfiguration(config =>
+        .ConfigureAppConfiguration((context, config) =>
         {
-            var keyVaultUri = new Uri(Environment.GetEnvironmentVariable("AzureKeyVault__VaultUri"));
-            config.AddAzureKeyVault(
-                keyVaultUri,
-                new DefaultAzureCredential(),
-                new AzureKeyVaultConfigurationOptions());
+            var builtConfig = config.Build();
+            var keyVaultUri = new Uri(builtConfig["AzureKeyVault__VaultUri"]);
 
+            config.AddAzureKeyVault(keyVaultUri, new DefaultAzureCredential(), new AzureKeyVaultConfigurationOptions());
         })
-        .ConfigureFunctionsWorkerDefaults()
-        .UseSerilog(Log.Logger)
-        .ConfigureServices((hostContext, services) =>
+        .ConfigureFunctionsWebApplication() // Required for isolated model
+        .ConfigureServices((context, services) =>
         {
             services.AddApplicationInsightsTelemetryWorkerService();
             services.ConfigureFunctionsApplicationInsights();
-            services.AddOptions();
 
-            var configuration = hostContext.Configuration;
+            var config = context.Configuration;
 
+            // Strongly typed Twitch config
             services.Configure<TwitchSettings>(options =>
             {
-                options.ClientId = configuration["CorvidOnlineTwitchClientId"] ?? string.Empty;
-                options.ClientSecret = configuration["CorvidOnlineTwitchSecret"] ?? string.Empty;
-                options.SigningSecret = configuration["CorvidOnlineTwitchSigningKey"] ?? string.Empty;
+                options.ClientId = config["CorvidOnlineTwitchClientId"] ?? string.Empty;
+                options.ClientSecret = config["CorvidOnlineTwitchSecret"] ?? string.Empty;
+                options.SigningSecret = config["CorvidOnlineTwitchSigningKey"] ?? string.Empty;
             });
 
-
+            // Main Twitch API Client
             services.AddHttpClient(TwitchConstants.TwitchHttpClientName, client =>
             {
                 client.BaseAddress = new Uri(TwitchConstants.TwitchBaseUri);
-                client.DefaultRequestHeaders.Add(TwitchConstants.ClientIdHeader, configuration["CorvidOnlineTwitchClientId"]);
                 client.DefaultRequestHeaders.Accept.Add(MediaTypeWithQualityHeaderValue.Parse(MediaTypeNames.Application.Json));
+                client.DefaultRequestHeaders.Add(TwitchConstants.ClientIdHeader, config["CorvidOnlineTwitchClientId"]);
             })
             .AddStandardResilienceHandler();
 
+            // OAuth HTTP Client
             services.AddHttpClient(TwitchConstants.TwitchOAuthHttpClientName, client =>
-                {
-                    client.BaseAddress = new Uri(TwitchConstants.TwitchOAuthBaseUri);
-                    client.DefaultRequestHeaders.Accept.Add(
-                        MediaTypeWithQualityHeaderValue.Parse(MediaTypeNames.Application.Json));
-                    client.Timeout = TimeSpan.FromSeconds(30);
-                })
-                .AddStandardResilienceHandler(options =>
-                {
-                    // Controls timeout for each attempt
-                    options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(30);
-                    // Optional: controls cumulative max time across retries
-                    options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(60);
-
-                    options.Retry.MaxRetryAttempts = 2;
-
-                    options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(35);
-                    options.CircuitBreaker.FailureRatio = 0.5;
-                    options.CircuitBreaker.MinimumThroughput = 3;
-                    options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
-                });
+            {
+                client.BaseAddress = new Uri(TwitchConstants.TwitchOAuthBaseUri);
+                client.DefaultRequestHeaders.Accept.Add(MediaTypeWithQualityHeaderValue.Parse(MediaTypeNames.Application.Json));
+                client.Timeout = TimeSpan.FromSeconds(30);
+            })
+            .AddStandardResilienceHandler(options =>
+            {
+                options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(30);
+                options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(60);
+                options.Retry.MaxRetryAttempts = 2;
+                options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(35);
+                options.CircuitBreaker.FailureRatio = 0.5;
+                options.CircuitBreaker.MinimumThroughput = 3;
+                options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
+            });
 
             services.AddSingleton<ITwitchUserMappingService, TwitchUserMappingService>();
         })
+        .UseSerilog() // Hook Serilog into Worker logging
         .Build();
 
     host.Run();
 }
 catch (Exception ex)
 {
-    Log.Error(ex, "An error occurred while starting the host.");
+    Log.Fatal(ex, "Unhandled exception during host startup.");
+    throw;
 }
 finally
 {
