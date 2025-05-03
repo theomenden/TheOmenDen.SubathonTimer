@@ -1,15 +1,14 @@
-using System.Net.Http.Headers;
-using System.Net.Mime;
 using Azure.Extensions.AspNetCore.Configuration.Secrets;
 using Azure.Identity;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Formatting.Compact;
 using Serilog.Sinks.SystemConsole.Themes;
+using System.Net.Http.Headers;
+using System.Net.Mime;
 using TheOmenDen.TwitchInterop.Models;
 using TheOmenDen.TwitchInterop.Services;
 
@@ -74,7 +73,14 @@ try
                 })
                 .AddStandardResilienceHandler(options =>
                 {
+                    // Controls timeout for each attempt
+                    options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(30);
+
+                    // Optional: controls cumulative max time across retries
+                    options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(60);
+
                     options.Retry.MaxRetryAttempts = 2;
+
                     options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(35);
                     options.CircuitBreaker.FailureRatio = 0.5;
                     options.CircuitBreaker.MinimumThroughput = 3;
