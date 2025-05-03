@@ -1,0 +1,30 @@
+﻿@page "/login-error"
+@using Microsoft.FluentUI.AspNetCore.Components
+
+<PageTitle>Login Error</PageTitle>
+
+<FluentStack Orientation="Orientation.Vertical"
+             HorizontalGap="12"
+             HorizontalAlignment="HorizontalAlignment.Center"
+             Style="height:100%;">
+
+    <FluentLabel Typo="Typography.PageTitle" Color="Color.Error">
+        Twitch Login Failed
+    </FluentLabel>
+
+    <FluentLabel Typo="Typography.Body">
+        There was a problem completing the Twitch login process.
+        Please try again or contact support if the issue continues.
+    </FluentLabel>
+
+    <FluentButton Appearance="Appearance.Filled" OnClick="NavigateToLogin">
+        Retry Login
+    </FluentButton>
+
+</FluentStack>
+
+@code {
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+
+    private void NavigateToLogin() => Navigation.NavigateTo("/");
+}

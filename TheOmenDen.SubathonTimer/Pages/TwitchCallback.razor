@@ -40,7 +40,7 @@
             TwitchState.User = user;
             Navigation.NavigateTo("/connected", forceLoad: true);
         }
-        catch
+        catch(Exception ex)
         {
             Navigation.NavigateTo("/login-error", forceLoad: true);
         }
