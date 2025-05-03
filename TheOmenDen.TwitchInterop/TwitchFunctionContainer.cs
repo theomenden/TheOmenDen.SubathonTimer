@@ -49,7 +49,7 @@ namespace TheOmenDen.TwitchInterop
 
         [Function(nameof(TwitchOAuthCallback))]
         public async Task<HttpResponseData> TwitchOAuthCallback(
-    [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "twitch/oauth/callback")] HttpRequestData req,
+    [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "api/twitch/oauth/callback")] HttpRequestData req,
     FunctionContext context,
     CancellationToken cancellationToken)
         {
