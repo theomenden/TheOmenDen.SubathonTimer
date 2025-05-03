@@ -79,6 +79,16 @@ try
             });
 
             services.AddSingleton<ITwitchUserMappingService, TwitchUserMappingService>();
+
+            services.AddCors(options =>
+            {
+                options.AddDefaultPolicy(policy =>
+                {
+                    policy.WithOrigins("https://subathon.corvid.online")
+                        .AllowAnyHeader()
+                        .AllowAnyMethod();
+                });
+            });
         })
         .UseSerilog() // Hook Serilog into Worker logging
         .Build();
