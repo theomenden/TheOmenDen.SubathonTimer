@@ -10,18 +10,8 @@ using Serilog.Sinks.SystemConsole.Themes;
 using System.Net.Http.Headers;
 using System.Net.Mime;
 using TheOmenDen.TwitchInterop.Models;
-using TheOmenDen.TwitchInterop.Services;
 
 // Setup Serilog for structured logging
-Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Information()
-    .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
-    .Enrich.FromLogContext()
-    .Enrich.WithProcessName()
-    .Enrich.WithEnvironmentName()
-    .WriteTo.Console(theme: AnsiConsoleTheme.Code)
-    .WriteTo.Debug(new CompactJsonFormatter())
-    .CreateLogger();
 
 try
 {
@@ -40,6 +30,24 @@ try
             services.ConfigureFunctionsApplicationInsights();
 
             var config = context.Configuration;
+
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Information()
+                .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
+                .Enrich.FromLogContext()
+                .Enrich.WithProcessName()
+                .Enrich.WithEnvironmentName()
+                .WriteTo.Async(a =>
+                {
+                    a.Console(theme: AnsiConsoleTheme.Code);
+                    a.Debug(new CompactJsonFormatter());
+                })
+#if DEBUG
+                .WriteTo.ApplicationInsights(config["APPINSIGHTS_INSTRUMENTATIONKEY"] ?? string.Empty, TelemetryConverter.Traces)
+#endif
+                .CreateLogger();
+
+            services.AddLogging(lb => lb.AddSerilog(Log.Logger, true));
 
             // Strongly typed Twitch config
             services.Configure<TwitchSettings>(options =>
@@ -78,8 +86,6 @@ try
                 options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
             });
 
-            services.AddSingleton<ITwitchUserMappingService, TwitchUserMappingService>();
-
             services.AddCors(options =>
             {
                 options.AddDefaultPolicy(policy =>
@@ -90,7 +96,6 @@ try
                 });
             });
         })
-        .UseSerilog() // Hook Serilog into Worker logging
         .Build();
 
     host.Run();

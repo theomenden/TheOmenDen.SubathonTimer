@@ -11,40 +11,15 @@ using System.Text;
 using System.Text.Json;
 using TheOmenDen.TwitchInterop.Extensions;
 using TheOmenDen.TwitchInterop.Models;
-using TheOmenDen.TwitchInterop.Services;
 
 namespace TheOmenDen.TwitchInterop
 {
-    public class TwitchFunctionContainer
+    public class TwitchFunctionContainer(
+        ILogger<TwitchFunctionContainer> logger,
+        IOptions<TwitchSettings> settings,
+        IHttpClientFactory httpClientFactory)
     {
-        private readonly ILogger<TwitchFunctionContainer> _logger;
-        private readonly TwitchSettings _settings;
-        private readonly IHttpClientFactory _httpClientFactory;
-        private readonly ITwitchUserMappingService _mappingService;
-        public TwitchFunctionContainer(
-            ILogger<TwitchFunctionContainer> logger,
-            IOptions<TwitchSettings> settings,
-            ITwitchUserMappingService mappingService,
-            IHttpClientFactory httpClientFactory)
-        {
-            _logger = logger;
-            _settings = settings.Value;
-            _mappingService = mappingService;
-            _httpClientFactory = httpClientFactory;
-        }
-
-        [Function(nameof(GetTwitchStatus))]
-        public async Task<HttpResponseData> GetTwitchStatus(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req,
-            FunctionContext context,
-            CancellationToken cancellationToken)
-        {
-            var azureUserId = context.GetUserId();
-            var exists = await _mappingService.DoesMappingExistAsync(azureUserId, cancellationToken);
-
-            var response = req.CreateResponse(exists ? HttpStatusCode.OK : HttpStatusCode.NotFound);
-            return response;
-        }
+        private readonly TwitchSettings _settings = settings.Value;
 
 
         [Function(nameof(TwitchOAuthCallback))]
@@ -68,7 +43,7 @@ namespace TheOmenDen.TwitchInterop
 
             const string redirectUri = "https://subathon.corvid.online/twitch-callback";
 
-            var oauthClient = _httpClientFactory.CreateClient(TwitchConstants.TwitchOAuthHttpClientName);
+            var oauthClient = httpClientFactory.CreateClient(TwitchConstants.TwitchOAuthHttpClientName);
 
             var form = new Dictionary<string, string>
             {
@@ -79,7 +54,7 @@ namespace TheOmenDen.TwitchInterop
                 ["redirect_uri"] = redirectUri
             };
 
-            var response = await oauthClient.PostAsync("", new FormUrlEncodedContent(form), cancellationToken);
+            var response = await oauthClient.PostAsync(TwitchConstants.Endpoints.OAuthToken, new FormUrlEncodedContent(form), cancellationToken);
             var json = await response.Content.ReadAsStringAsync(cancellationToken);
 
             if (!response.IsSuccessStatusCode)
@@ -100,7 +75,7 @@ namespace TheOmenDen.TwitchInterop
             }
 
             // Use token to fetch Twitch user info
-            var twitchClient = _httpClientFactory.CreateClient(TwitchConstants.TwitchHttpClientName);
+            var twitchClient = httpClientFactory.CreateClient(TwitchConstants.TwitchHttpClientName);
             twitchClient.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue(TwitchConstants.AuthHeaderScheme, tokenData.AccessToken);
             twitchClient.DefaultRequestHeaders.Add(TwitchConstants.ClientIdHeader, _settings.ClientId);
@@ -125,12 +100,8 @@ namespace TheOmenDen.TwitchInterop
                 await fail.WriteStringAsync("Unable to extract user information", cancellationToken);
                 return fail;
             }
-            // https://twitchinterop.corvid.online/api/twitch/oauth/callback?code=3fqincpadl78hdbp0lh73ovqd09ffy
             // Get Azure AD user ID from context
             var azureUserId = context.GetUserId();
-
-            // Store the mapping securely
-            await _mappingService.StoreMappingAsync(user.Id, azureUserId, cancellationToken);
 
             var ok = req.CreateResponse(HttpStatusCode.OK);
             await ok.WriteStringAsync($"Linked Twitch ID {user.Id} with Azure ID {azureUserId}", cancellationToken);
@@ -149,13 +120,13 @@ namespace TheOmenDen.TwitchInterop
                 var body = await JsonSerializer.DeserializeAsync<AccessTokenRequest>(req.Body, cancellationToken: cancellationToken);
                 if (body is null || string.IsNullOrEmpty(body.AccessToken))
                 {
-                    _logger.LogWarning("Access token missing");
+                    logger.LogWarning("Access token missing");
                     var bad = req.CreateResponse(HttpStatusCode.BadRequest);
                     await bad.WriteStringAsync("Missing access token", cancellationToken);
                     return bad;
                 }
 
-                var client = _httpClientFactory.CreateClient(TwitchConstants.TwitchHttpClientName);
+                var client = httpClientFactory.CreateClient(TwitchConstants.TwitchHttpClientName);
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(TwitchConstants.AuthHeaderScheme, body.AccessToken);
                 client.DefaultRequestHeaders.Add(TwitchConstants.ClientIdHeader, _settings.ClientId);
 
@@ -164,7 +135,7 @@ namespace TheOmenDen.TwitchInterop
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    _logger.LogError("User info failed: {StatusCode}, {Body}", response.StatusCode, json);
+                    logger.LogError("User info failed: {StatusCode}, {Body}", response.StatusCode, json);
                     var fail = req.CreateResponse(HttpStatusCode.BadGateway);
                     await fail.WriteStringAsync("Twitch user lookup failed", cancellationToken);
                     return fail;
@@ -185,7 +156,7 @@ namespace TheOmenDen.TwitchInterop
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in GetTwitchUserInfo");
+                logger.LogError(ex, "Error in GetTwitchUserInfo");
                 var error = req.CreateResponse(HttpStatusCode.InternalServerError);
                 await error.WriteStringAsync("Internal error", cancellationToken);
                 return error;
@@ -213,7 +184,7 @@ namespace TheOmenDen.TwitchInterop
 
             var callbackUrl = "<YOUR_PUBLIC_EVENTSUB_CALLBACK>"; // Ideally from config
 
-            var client = _httpClientFactory.CreateClient(TwitchConstants.TwitchHttpClientName);
+            var client = httpClientFactory.CreateClient(TwitchConstants.TwitchHttpClientName);
             client.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue(TwitchConstants.AuthHeaderScheme, request.AccessToken);
 
@@ -322,14 +293,13 @@ namespace TheOmenDen.TwitchInterop
                 var eventType = root.GetProperty("subscription").GetProperty("type").GetString() ?? "unknown";
                 var broadcasterId = root.GetProperty("subscription").GetProperty("condition").GetProperty("broadcaster_user_id").GetString() ?? "unknown";
                 var eventData = root.GetProperty("event").ToString();
-                var userId = await _mappingService.GetAzureUserIdAsync(broadcasterId, cancellationToken);
                 logger.LogInformation("Received Twitch event: {EventType} for {BroadcasterId}", eventType, broadcasterId);
 
                 messages.Add(new SignalRMessageAction(
                     target: "twitchEvent"
                     )
                 {
-                    UserId = userId,
+                    UserId = broadcasterId,
                     Arguments = [eventType, eventData]
                 });
 
@@ -345,7 +315,7 @@ namespace TheOmenDen.TwitchInterop
             [HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequestData req,
             [SignalRConnectionInfoInput(HubName = "twitchhub", UserId = "{headers.x-ms-client-principal-id}")] SignalRConnectionInfo connectionInfo)
         {
-            _logger.LogInformation($"SignalR Connection URL = '{connectionInfo.Url}'");
+            logger.LogInformation($"SignalR Connection URL = '{connectionInfo.Url}'");
             return connectionInfo;
         }
 
