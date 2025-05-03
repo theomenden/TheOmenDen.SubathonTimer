@@ -75,7 +75,6 @@ try
                 {
                     // Controls timeout for each attempt
                     options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(30);
-
                     // Optional: controls cumulative max time across retries
                     options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(60);
 

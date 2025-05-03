@@ -49,7 +49,7 @@ namespace TheOmenDen.TwitchInterop
 
         [Function(nameof(TwitchOAuthCallback))]
         public async Task<HttpResponseData> TwitchOAuthCallback(
-    [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "api/twitch/oauth/callback")] HttpRequestData req,
+    [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "twitch/oauth/callback")] HttpRequestData req,
     FunctionContext context,
     CancellationToken cancellationToken)
         {
@@ -66,7 +66,7 @@ namespace TheOmenDen.TwitchInterop
                 return bad;
             }
 
-            var redirectUri = "https://subathon.corvid.online/twitch-callback";
+            const string redirectUri = "https://subathon.corvid.online/twitch-callback";
 
             var oauthClient = _httpClientFactory.CreateClient(TwitchConstants.TwitchOAuthHttpClientName);
 
@@ -125,7 +125,7 @@ namespace TheOmenDen.TwitchInterop
                 await fail.WriteStringAsync("Unable to extract user information", cancellationToken);
                 return fail;
             }
-
+            // https://twitchinterop.corvid.online/api/twitch/oauth/callback?code=3fqincpadl78hdbp0lh73ovqd09ffy
             // Get Azure AD user ID from context
             var azureUserId = context.GetUserId();
 
