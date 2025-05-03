@@ -66,7 +66,7 @@ namespace TheOmenDen.TwitchInterop
                 return bad;
             }
 
-            var redirectUri = "https://<your-function-app>.azurewebsites.net/api/twitch/oauth/callback";
+            var redirectUri = "https://subathon.corvid.online/twitch-callback";
 
             var oauthClient = _httpClientFactory.CreateClient(TwitchConstants.TwitchOAuthHttpClientName);
 
