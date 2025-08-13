@@ -11,7 +11,7 @@
   <ItemGroup>
     <PackageReference Include="Ardalis.SmartEnum" Version="8.2.0" />
     <PackageReference Include="Ardalis.SmartEnum.SystemTextJson" Version="8.1.0" />
-    <PackageReference Include="Azure.Core" Version="1.47.1" />
+    <PackageReference Include="Azure.Core" Version="1.47.2" />
     <PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.4.0" />
     <PackageReference Include="Azure.Identity" Version="1.15.0" />
     <PackageReference Include="BlazorDexie" Version="2.0.2" />
